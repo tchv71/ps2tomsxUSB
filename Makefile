@@ -24,13 +24,14 @@ OBJS = msxmap.o ps2handl.o dbasemgt.o get_intelhex.o sys_timer.o serial_no.o cdc
 
 #######=== First step: Identify target inside the Design config file ===########
 DSN_CONF_FILE = system.h
+CONF_FILE = $(DSN_CONF_FILE)
 WHAT_FIND     = "define MCU"
 ifneq ("$(wildcard $(DSN_CONF_FILE))","") #Check if CONF_FILE is available
   cat := $(if $(filter $(OS),Windows_NT),type,cat) #Check OS (Only Windows use type. The others use cat)
-  MCU := $(shell $(cat) $(DSN_CONF_FILE) | grep $(WHAT_FIND)) #Find MCU definition
+  MCU := $(shell type $(DSN_CONF_FILE) | grep $(WHAT_FIND)) #Find MCU definition
 
-  ifeq ($(word 2,$(MCU)),MCU) #Check if the second word is "MCU" (for example MCU1 is not valid)
-    MCU := $(strip $(word $(words $(MCU)),$(MCU))) #Get the last word
+  ifeq (1,1) #Check if the second word is "MCU" (for example MCU1 is not valid)
+    MCU := STM32F401#$(strip $(word $(words $(MCU)),$(MCU))) #Get the last word
 
     doM3 =
     doM4 =

@@ -80,10 +80,12 @@ volatile bool shiftstate;
 volatile uint16_t linhavarrida;
 extern volatile bool update_ps2_leds;         //Declared on ps2handl.c
 //Place to store previous time for each Y last scan
-volatile uint32_t previous_y_systick[ 16 ] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+volatile uint32_t previous_y_systick[ 16+1 ] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 //Variable used to store the values of the X for each Y scan - Each Y has its own image of BSSR register
-uint32_t x_bits[ 16 ]; //All pins that interface with PORT B of 8255 must have high level as default
+uint32_t x_bits[ 16+1 ]; //All pins that interface with PORT B of 8255 must have high level as default
+uint8_t bit_recode[256];
+uint32_t ALL_X_SET = X7_SET_OR | X6_SET_OR | X5_SET_OR | X4_SET_OR | X3_SET_OR | X2_SET_OR | X1_SET_OR | X0_SET_OR;
 
 uint8_t y_dummy;                              //Read from MSX Database to sinalize "No keys mapping"
 volatile uint32_t formerscancode;
@@ -129,19 +131,22 @@ void msxmap::msx_interface_setup(void)
 #if MCU == STM32F401
   gpio_mode_setup(X_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLUP,
   X7_PIN | X6_PIN | X5_PIN | X4_PIN | X3_PIN | X2_PIN | X1_PIN | X0_PIN);
-  gpio_set_output_options(X_PORT, GPIO_OTYPE_OD, GPIO_OSPEED_100MHZ,
+  gpio_set_output_options(X_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ,
   X7_PIN | X6_PIN | X5_PIN | X4_PIN | X3_PIN | X2_PIN | X1_PIN | X0_PIN);
 #endif
-
   //Init startup state of BSSR image to each Y scan
-  for(uint8_t i = 0; i < 16; i++)
-    x_bits[ i ] = X7_SET_OR | X6_SET_OR | X5_SET_OR | X4_SET_OR | X3_SET_OR | X2_SET_OR | X1_SET_OR | X0_SET_OR;
+  for(uint8_t i = 0; i < 16+1; i++)
+    x_bits[i] = ALL_X_SET;
   
   // Initialize dispatch_keys_queue ringbuffer
   ring_init(&dispatch_keys_queue, dispatch_keys_queue_buffer, DISPATCH_QUEUE_SIZE);
   for(uint16_t i=0; i<DISPATCH_QUEUE_SIZE; ++i)
     dispatch_keys_queue.data[i]=0;
 
+  for (uint16_t i=0; i<256; ++i)
+    bit_recode[i] = 0xF;
+  for (uint8_t i=0; i<4; ++i)
+    bit_recode[255^(1<<i)] = Y_XLAT_TABLE[3-i];//Y_XLAT_TABLE[i];
   // GPIO pins for MSX keyboard Y scan (PC3:0 of the MSX 8255 - PC3 MSX 8255 Pin 17)
   //gpio_set(Y3_PORT, Y3_PIN); //pull up resistor
 #if MCU == STM32F103
@@ -465,7 +470,7 @@ void msxmap::convert2msx()
      )
   {
     //Shift and/or Graph and/or Control and/or Code were/was released, then force release of all other keys
-    for(uint8_t i = 0; i < 16; i++)
+    for(uint8_t i = 0; i < 16+1; i++)
       x_bits[ i ] = X7_SET_OR | X6_SET_OR | X5_SET_OR | X4_SET_OR | X3_SET_OR | X2_SET_OR | X1_SET_OR | X0_SET_OR;
     return;
   }
@@ -948,8 +953,10 @@ void msxmap::compute_x_bits_and_check_interrupt_stuck (
       }
     }
   }
+  x_bits[16] = x_bits[Y_XLAT_TABLE[y_local]];
   //See when the Y colunm's XLine was updated, in order to update keys even without the PPI being updated.
-  if (systicks - previous_y_systick[Y_XLAT_TABLE[y_local]] > MAX_TIME_OF_IDLE_KEYSCAN_SYSTICKS)
+  msx_Y_scan = (gpio_port_read(Y0_PORT) & Y_MASK) >> 5;
+  if (systicks - previous_y_systick[Y_XLAT_TABLE[y_local]] > MAX_TIME_OF_IDLE_KEYSCAN_SYSTICKS || msx_Y_scan==0)
   {
     //MSX is not updating Y, so updating keystrokes by interrupts is not working
     //Verify the actual hardware Y_SCAN
@@ -957,10 +964,15 @@ void msxmap::compute_x_bits_and_check_interrupt_stuck (
     exti_disable_request(Y3_exti | Y2_exti | Y1_exti | Y0_exti);
 #if MCU == STM32F401
     // Read the MSX keyboard Y scan through GPIO pins A5:A8, mask to 0 other bits and rotate right 5
-    msx_Y_scan = (gpio_port_read(Y0_PORT) & Y_MASK) >> 5;
-    
-    if(Y_XLAT_TABLE[y_local] == msx_Y_scan)
-      GPIO_BSRR(X_PORT) = x_bits[msx_Y_scan]; //Atomic GPIOB update => Release and press MSX keys for this column
+    if (msx_Y_scan==0) // All bits are 0 - check for any key pressed
+      msx_Y_scan = 16;
+    else
+    {
+      msx_Y_scan |= 0b11110000;
+      msx_Y_scan = bit_recode[msx_Y_scan];
+    }
+    if(Y_XLAT_TABLE[y_local] == msx_Y_scan || msx_Y_scan == 16)
+	GPIO_BSRR(X_PORT) = x_bits[msx_Y_scan]; //Atomic GPIOB update => Release and press MSX keys for this column
 #endif  //#if MCU == STM32F401
 
 #if MCU == STM32F103
@@ -1037,16 +1049,31 @@ void exti9_5_isr(void) // PC3:0 - This ISR works like interrupt on change of eac
   uint16_t msx_Y_scan;
 
   //Performance measurement
-  GPIO_BSRR(Dbg_Yint_PORT) = Dbg_Yint_PIN << 16; //Signs start of interruption. This line is useful only to measure performance.
+  //GPIO_BSRR(Dbg_Yint_PORT) = Dbg_Yint_PIN << 16; //Signs start of interruption. This line is useful only to measure performance.
 
   // Read the MSX keyboard Y scan through GPIO pins A12:A8, mask to 0 other bits and rotate right 8 and 9
   msx_Y_scan = (gpio_port_read(Y0_PORT) & Y_MASK) >> 5;
-  
-  GPIO_BSRR(X_PORT) = x_bits[msx_Y_scan]; //Atomic GPIOB update => Release and press MSX keys for this column. This ends time criticity.
+  uint16_t port = msx_Y_scan;
+//  char buf[17];
+//  sprintf(buf, "Y=%X\r\n", msx_Y_scan);
+//  con_send_string((uint8_t*)buf);
+  if (msx_Y_scan==0/* || msx_Y_scan == 15 */) // All bits are 0 - check for any key pressed
+    msx_Y_scan = 16;
+  else if (msx_Y_scan == 15)
+  {
+    int i=0;
+  }
+  else
+  {
+    msx_Y_scan = bit_recode[msx_Y_scan | 0b11110000];
+  }
+  uint32_t X_BITS = x_bits[msx_Y_scan];
+  if (X_BITS != ALL_X_SET&&msx_Y_scan!=16)
+    int i=0;
+  GPIO_BSRR (X_PORT) = X_BITS; //Atomic GPIOB update => Release and press MSX keys for this column. This ends time criticity.
 
   //Performance measurement
-  GPIO_BSRR(Dbg_Yint_PORT) = Dbg_Yint_PIN; //Signs end of interruption. Default condition is "1". This line is useful only to measure performance.
-
+  //GPIO_BSRR(Dbg_Yint_PORT) = Dbg_Yint_PIN; //Signs end of interruption. Default condition is "1". This line is useful only to measure performance.
   // Clear interrupt Y Scan flags
   exti_reset_request(Y0_exti | Y1_exti | Y2_exti | Y3_exti);
     

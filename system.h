@@ -155,7 +155,7 @@ extern "C" {
  * 
  * 
  */
-#define USE_USB                   true      //Here you can change the USB support in M4 family.
+#define USE_USB                   false      //Here you can change the USB support in M4 family.
 
 #define CDC_ONLY_ON_USB           false     // If we are providing serial interfaces only => True
 
