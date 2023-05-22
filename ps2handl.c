@@ -1147,8 +1147,14 @@ void put_pullups_on_non_used_pins(void)
 /*************************************************************************************************/
 /*************************************************************************************************/
 #if MCU == STM32F401
+
 void exti15_10_isr(void) // PS/2 Clock
 {
+  if (exti_get_flag_status(Y7_exti) || exti_get_flag_status(Y6_exti))
+  {
+    exti9_5_isr();
+    return;
+  }
 #if PS2_CLK_INTERRUPT == GPIO_INT
   //Now starts PS2Clk interrupt handler
   //Debug & performance measurement

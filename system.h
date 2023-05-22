@@ -355,8 +355,8 @@ enum ENDPOINT{
 #define TIM2UIF_PORT              GPIOA
 #define TIM2UIF_PIN               GPIO5       //A5
 #define Dbg_Yint_PORT             GPIOA
-#define Dbg_Yint0and1_PIN         GPIO6       //A6
-#define Dbg_Yint2and3_PIN         GPIO7       //A7
+//#define Dbg_Yint0and1_PIN         GPIO6       //A6
+//define Dbg_Yint2and3_PIN         GPIO7       //A7
 
 //Available resources
 #define AVAILABLE_B0_PORT         GPIOB
@@ -407,26 +407,43 @@ enum ENDPOINT{
 #define X0_PORT                   GPIOB
 #define X0_PIN                    GPIO12
 #define MSX_X_BIT0                12
-#define Y_PORT                    GPIOA
-#define Y_PIN                     GPIO4
+//#define Y_PORT                    GPIOA
+//#define Y_PIN                     GPIO4
+#define Y7_PORT                   GPIOA
+#define Y7_PIN                    GPIO12
+#define Y7_exti                   EXTI12
+#define Y6_PORT                   GPIOA
+#define Y6_PIN                    GPIO11
+#define Y6_exti                   EXTI11
+#define Y5_PORT                   GPIOA
+#define Y5_PIN                    GPIO8
+#define Y5_exti                   EXTI8
+#define Y4_PORT                   GPIOA
+#define Y4_PIN                    GPIO7
+#define Y4_exti                   EXTI7
 #define Y3_PORT                   GPIOA
-#define Y3_PIN                    GPIO5
-#define Y3_exti                   EXTI5
+#define Y3_PIN                    GPIO6
+#define Y3_exti                   EXTI6
 #define Y2_PORT                   GPIOA
-#define Y2_PIN                    GPIO6
-#define Y2_exti                   EXTI6
+#define Y2_PIN                    GPIO5
+#define Y2_exti                   EXTI5
 #define Y1_PORT                   GPIOA
-#define Y1_PIN                    GPIO7
-#define Y1_exti                   EXTI7
+#define Y1_PIN                    GPIO4
+#define Y1_exti                   EXTI4
 #define Y0_PORT                   GPIOA
-#define Y0_PIN                    GPIO8
-#define Y0_exti                   EXTI8
+#define Y0_PIN                    GPIO3
+#define Y0_exti                   EXTI3
 #define CAPSLOCK_PORT             GPIOB
 #define CAPSLOCK_PIN              GPIO4
-#define CAPSLOCK_exti             EXTI4
 #define KANA_PORT                 GPIOB
 #define KANA_PIN                  GPIO6
-#define KANA_exti                 EXTI6
+#define CTRL_PORT                 GPIOB
+#define CTRL_PIN                  GPIO4
+#define SHIFT_PORT                GPIOB
+#define SHIFT_PIN                 GPIO6
+#define RUSLAT_PORT               GPIOB
+#define RUSLAT_PIN                GPIO8
+
 #if (USE_USB == true)
 #define OTG_FS_DM_PORT            GPIOA
 #define OTG_FS_DM_PIN             GPIO11
@@ -440,7 +457,8 @@ enum ENDPOINT{
 //SERIAL3_TX_PIN                  GPIO10(Pre-defined)
 //SERIAL3_RX_PIN                  GPIO11(Pre-defined)
 
-#define Y_MASK                    0x1E0 //Valid bits: A5 as Y3, A6 as Y2, A7 is Y1 and A8 is Y0.
+#define Y_MASK_1 0b111111000 //Valid bits: A3 as Y0, A4 as Y1, A5 as Y2, A6 as Y3, A7 is Y4, A8 is Y5,
+#define Y_MASK_2 (0b11 << 11) // A11 as Y6 and A12 as Y7.
 
 #define PS2_DATA_PORT             GPIOB
 #define PS2_DATA_PIN              GPIO5
@@ -449,8 +467,8 @@ enum ENDPOINT{
 #define PS2_CLK_I_EXTI            EXTI15
 #define PS2_CLK_O_PORT            GPIOB
 #define PS2_CLK_O_PIN             GPIO7
-#define PS2_POWER_CTR_PORT        GPIOA
-#define PS2_POWER_CTR_PIN         GPIO4 
+#define PS2_POWER_CTR_PORT        GPIOB
+#define PS2_POWER_CTR_PIN         GPIO2
 
 //Debug facilities
 #define USER_KEY_PORT             GPIOA
@@ -512,7 +530,18 @@ enum ENDPOINT{
 #define X2_SET_OR                 0x00002000  // 8192
 #define X1_SET_OR                 0x00000400  // 1024
 #define X0_SET_OR                 0x00001000  // 4096
-
+#define P4_SET_OR                 (1<<4)
+#define P4_SET_AND                0xFFEFFFFF
+#define P4_CLEAR_OR               (1<<(4+16))
+//#define P4_CLEAR_AND              0xFFFFFFEF
+#define P6_SET_OR                 0x40
+//#define P6_SET_AND                0xFFBFFFFF
+#define P6_CLEAR_OR               0x00400000
+//#define P6_CLEAR_AND              0xFFFFFFBF
+#define P8_SET_OR                 0x100
+//#define P8_SET_AND                0xFEFFFFFF
+#define P8_CLEAR_OR               0x01000000
+//#define P8_CLEAR_AND              0xFFFFFEFF
 //#define MMIO32(addr)  (*(volatile uint32_t *)(addr))
 #define DBGMCU_APB1_FZ            MMIO32(DBGMCU_BASE+8)
 #define DBG_I2C3_SMBUS_TIMEOUT    1<<23
