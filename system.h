@@ -438,11 +438,11 @@ enum ENDPOINT{
 #define KANA_PORT                 GPIOB
 #define KANA_PIN                  GPIO6
 #define CTRL_PORT                 GPIOB
-#define CTRL_PIN                  GPIO4
+#define CTRL_PIN                  GPIO8
 #define SHIFT_PORT                GPIOB
 #define SHIFT_PIN                 GPIO6
 #define RUSLAT_PORT               GPIOB
-#define RUSLAT_PIN                GPIO8
+#define RUSLAT_PIN                GPIO4
 
 #if (USE_USB == true)
 #define OTG_FS_DM_PORT            GPIOA
@@ -533,15 +533,6 @@ enum ENDPOINT{
 #define P4_SET_OR                 (1<<4)
 #define P4_SET_AND                0xFFEFFFFF
 #define P4_CLEAR_OR               (1<<(4+16))
-//#define P4_CLEAR_AND              0xFFFFFFEF
-#define P6_SET_OR                 0x40
-//#define P6_SET_AND                0xFFBFFFFF
-#define P6_CLEAR_OR               0x00400000
-//#define P6_CLEAR_AND              0xFFFFFFBF
-#define P8_SET_OR                 0x100
-//#define P8_SET_AND                0xFEFFFFFF
-#define P8_CLEAR_OR               0x01000000
-//#define P8_CLEAR_AND              0xFFFFFEFF
 //#define MMIO32(addr)  (*(volatile uint32_t *)(addr))
 #define DBGMCU_APB1_FZ            MMIO32(DBGMCU_BASE+8)
 #define DBG_I2C3_SMBUS_TIMEOUT    1<<23

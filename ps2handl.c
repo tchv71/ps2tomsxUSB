@@ -1028,7 +1028,7 @@ bool mount_scancode()
         {
           //8 bytes: Two groups of 3 and a 2 bytes one: (E1, 14, 77; E1, F0, 14; F0, 77).
           //The group (F0, 77) is interpreted as a Num Lock break code: Harmless.
-          //Ler apenas os 3 iniciais e desconsiderar os demais. Estou lendo o segundo byte
+          //Read only the first 3 and disregard the others. I'm reading the second byte
           scancode[2] = ps2_byte_received;
           scancode[0] = 2;
           mount_scancode_count_status = 2; //points to next case
@@ -1036,12 +1036,12 @@ bool mount_scancode()
         }
         if (ps2_keystr_f0 == true)
         {
-          //São 2 bytes, logo, terminou
+          // It's 2 bytes, so it's over
           // Exception are all the keys starting with E0 7C. Discard this,
           // If you want to map these keys, fix them in the excel origin file.
           scancode[2] = ps2_byte_received;
           scancode[0] = 2;
-          //Conclui scan
+          //Complete scan
           mount_scancode_OK = true;
           reset_mount_scancode_machine();
           return true;
@@ -1055,13 +1055,13 @@ bool mount_scancode()
         {
           //São 3 bytes, e estou lendo o terceiro byte, logo, terminou.
           // Exception is the PrintScreen break: It will be returned as one 3 bytes ps2_byte_received releases:
-          // E0 F0 7C (plus both E0 F0 12 and E0 F0 7E are dicarded), but this key is not present on MSX.
+          // E0 F0 7C (plus both E0 F0 12 and E0 F0 7E are discarded), but this key is not present on MSX.
           // If you want to map this key, fix it in excel file and click on the black keyboard to rerun macro
           if( (ps2_byte_received != 0x12) )
           {
             scancode[3] = ps2_byte_received;
             scancode[0] = 3;
-            //Conclui scan
+            //Complete scan
             mount_scancode_OK = true;
             reset_mount_scancode_machine();
             return true;
@@ -1150,7 +1150,7 @@ void put_pullups_on_non_used_pins(void)
 
 void exti15_10_isr(void) // PS/2 Clock
 {
-  if (exti_get_flag_status(Y7_exti) || exti_get_flag_status(Y6_exti))
+  if (exti_get_flag_status(Y7_exti | Y6_exti))// || exti_get_flag_status(Y6_exti))
   {
     exti9_5_isr();
     return;
