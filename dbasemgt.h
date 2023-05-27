@@ -60,7 +60,11 @@ extern "C" {
 
 #include "system.h"
 #include "serial.h"
-#include "database.c"
+  extern const uint8_t
+  #if MCU == STM32F103
+  __attribute__((section("MSXDATABASE")))
+  #endif  //#if MCU == STM32F103
+  DEFAULT_MSX_KEYB_DATABASE_CONVERSION[(uint16_t)N_DATABASE_REGISTERS][(uint8_t)DB_NUM_COLS];
 #include "get_intelhex.h"
 
 

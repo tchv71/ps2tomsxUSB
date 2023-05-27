@@ -355,7 +355,7 @@ int main(void)
       update_ps2_leds = false;
       caps_former = caps_state;
       kana_former = kana_state;
-      ps2_update_leds(ps2numlockstate, !caps_state, !kana_state);
+      ps2_update_leds(ps2numlockstate, caps_state, !kana_state);
     } //if ( update_ps2_leds || (caps_state != caps_former) || (kana_state != kana_former) )
 
     //Keep RX serial buffer empty and echoes to output

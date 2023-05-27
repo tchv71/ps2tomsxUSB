@@ -933,7 +933,7 @@ void reset_mount_scancode_machine()
 bool mount_scancode()
 {
   //Check MSX CAPS and Kana status update
-  if( (caps_state = gpio_get(CAPSLOCK_PORT, CAPSLOCK_PIN)) != caps_former )
+  if( (caps_state = (gpio_get(RUSLAT_LED_PORT, RUSLAT_LED_PIN)!=0)) != caps_former )
     update_ps2_leds = true;
   if( (kana_state = gpio_get(KANA_PORT, KANA_PIN)) != kana_former )
     update_ps2_leds = true;
@@ -1049,7 +1049,7 @@ bool mount_scancode()
         break;  //case syntax suggested
       } //case 1:
       case 2:
-      //Está lendo o terceiro byte do ps2_byte_received
+      //It is reading the third byte of ps2_byte_received
       {
         if (ps2_keystr_e0 || ps2_keystr_e1)
         {
@@ -1117,9 +1117,9 @@ void general_debug_setup(void)
   gpio_set_output_options(TIM2CC1_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, TIM2CC1_PIN);
   gpio_set(TIM2CC1_PORT, TIM2CC1_PIN); //Default condition is "1"
 
-  gpio_mode_setup(TIM2UIF_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, TIM2UIF_PIN);
-  gpio_set_output_options(TIM2UIF_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, TIM2UIF_PIN);
-  gpio_set(TIM2UIF_PORT, TIM2UIF_PIN); //Default condition is "1"
+//  gpio_mode_setup(TIM2UIF_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, TIM2UIF_PIN);
+//  gpio_set_output_options(TIM2UIF_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, TIM2UIF_PIN);
+//  gpio_set(TIM2UIF_PORT, TIM2UIF_PIN); //Default condition is "1"
   
   gpio_mode_setup(Dbg_Yint_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, Dbg_Yint_PIN);
   gpio_set_output_options(Dbg_Yint_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, Dbg_Yint_PIN);
