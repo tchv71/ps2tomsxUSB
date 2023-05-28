@@ -800,7 +800,7 @@ void msxmap::msx_dispatch(void)
     case 1:
     { // .1 - NumLock and RusLat mapping (Columns 6 and 7)
       // if scancode is less than 0x69, state is RUSLAT_LED, not NumLock
-      bool state = ps2numlockstate;
+      bool state = !ps2numlockstate;
       if ((scancode[0]==1 && scancode[1]<0x69) || (scancode[0]==2 && scancode[1]==0xf0 && scancode[2]<0x69))
 	state = rusLatState;
       if (state == shiftstate)

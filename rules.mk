@@ -224,6 +224,7 @@ clobber:
 clean:
 	@printf "  CLEAN\n"
 	$(Q)$(RM) $(OBJS) $(OBJS:%.o=%.d)
+	$(Q)$(RM) $(BINARY)$(TARGET_MCU).elf
 
 stylecheck: $(STYLECHECKFILES:=.stylecheck)
 styleclean: $(STYLECHECKFILES:=.styleclean)
