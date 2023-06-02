@@ -97,7 +97,7 @@ void end_of_code(uint32_t*);
 int main(void)
 {
   uint32_t reset_org;
-;  end_of_code(&reset_org);
+  end_of_code(&reset_org);
 
 #if MCU == STM32F103
   //Blue Pill

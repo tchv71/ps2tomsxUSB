@@ -63,7 +63,7 @@
 #define X_LOCAL_MASK                      7   //Mask of X on press/release command byte
 #define Y_SHIFT                           9   //Shift column
 #define X_SHIFT                           0   //Shift line
-#define MSX_SHIFT_PRESS                   (Y_SHIFT<<NIBBLE)|X_SHIFT//Shift press will be resolved as 0x60
+#define MSX_SHIFT_PRESS                   ((Y_SHIFT<<NIBBLE)|X_SHIFT)//Shift press will be resolved as 0x60
 //#define Y_GRAPH                           6   //Graph colunm
 //#define X_GRAPH                           2   //Graph line
 //#define Y_CTRL                            8   //CTRL colunm
@@ -386,7 +386,7 @@ bool msxmap::available_msx_disp_keys_queue_buffer(void)
 
 // Fetches the next ps2_byte_received from the receive ring buffer
 //Input: void
-//Outut: Available byte read
+//Output: Available byte read
 uint8_t msxmap::get_msx_disp_keys_queue_buffer(void)
 {
   uint8_t i, result;
@@ -884,21 +884,23 @@ void msxmap::msx_dispatch(void)
       {
         //Shift state is OFF (not pressed), so performs as CASE 0 (see the displacement CASE0_KEY...)
         // Key 0 (PS/2 NumLock ON (Default)):
-        y_local = (*(base_of_database+scanline*DB_NUM_COLS+CASE0_KEY0) & (uint8_t)Y_LOCAL_MASK)  >> NIBBLE;
+	uint8_t tableVal = base_of_database[scanline * DB_NUM_COLS + CASE0_KEY0];
+        y_local = (tableVal & (uint8_t)Y_LOCAL_MASK)  >> NIBBLE;
         if (y_local != y_dummy) // Verify if key is mapped
         {
-          x_local = *(base_of_database+scanline*DB_NUM_COLS+CASE0_KEY0) & (uint8_t)X_LOCAL_MASK;
-          x_local_setb = (*(base_of_database+scanline*DB_NUM_COLS+CASE0_KEY0) & (uint8_t)X_POLARITY_BIT_MASK) >> X_POLARITY_BIT_POSITION;
+          x_local = tableVal & (uint8_t)X_LOCAL_MASK;
+          x_local_setb = (tableVal & (uint8_t)X_POLARITY_BIT_MASK) != 0;
           //Calculates x_bits of Key 0 and checks if the time in which the data of Line X of Column Y was updated,
           // in order to update keys even without the PPI being updated.
           compute_x_bits_and_check_interrupt_stuck(y_local, x_local, x_local_setb);
         }
         // Key 1 (PS/2 NumLock ON (Default)):
-        y_local = (*(base_of_database+scanline*DB_NUM_COLS+CASE0_KEY1) & (uint8_t)Y_LOCAL_MASK) >> NIBBLE;
+        tableVal =  base_of_database[scanline * DB_NUM_COLS + CASE0_KEY1];
+        y_local = (tableVal & (uint8_t)Y_LOCAL_MASK) >> NIBBLE;
         if (y_local != y_dummy) // Verify if key is mapped
         {
-          x_local = *(base_of_database+scanline*DB_NUM_COLS+CASE0_KEY1) & (uint8_t)X_LOCAL_MASK;
-          if( ((*(base_of_database+scanline*DB_NUM_COLS+CASE0_KEY1)) & ~(uint8_t)X_POLARITY_BIT_MASK) == (MSX_SHIFT_PRESS))
+          x_local = tableVal & (uint8_t)X_LOCAL_MASK;
+          if( (tableVal & ~(uint8_t)X_POLARITY_BIT_MASK) == MSX_SHIFT_PRESS)
           {
             //Shift key
             if(shiftstate)
@@ -909,7 +911,7 @@ void msxmap::msx_dispatch(void)
           else // if( (*(base_of_database+scanline*DB_NUM_COLS+CASE0_KEY1) & ~(uint8_t)X_POLARITY_BIT_MASK) == MSX_SHIFT_PRESS)
           {
             //Other key: different from Shift key
-            put_msx_disp_keys_queue_buffer(*(base_of_database+scanline*DB_NUM_COLS+CASE0_KEY1));
+            put_msx_disp_keys_queue_buffer(tableVal);
           } //else // if( (*(base_of_database+scanline*DB_NUM_COLS+CASE0_KEY1) & ~(uint8_t)X_POLARITY_BIT_MASK) == MSX_SHIFT_PRESS)
         } //if (y_local != y_dummy)
       }
@@ -917,54 +919,36 @@ void msxmap::msx_dispatch(void)
       {
         // Check for mapped keys
         // Key 0 (PS/2 Left and Right Shift):
-        y_local = (*(base_of_database+scanline*DB_NUM_COLS+CASE2_KEY0) & (uint8_t)Y_LOCAL_MASK) >> NIBBLE;
+	uint8_t tableVal = base_of_database[scanline * DB_NUM_COLS + CASE2_KEY0];
+	y_local = (tableVal & (uint8_t) Y_LOCAL_MASK) >> NIBBLE;
+        //static uint8_t waitForRelease = 0;
         if (y_local != y_dummy) // Verify if key is mapped
         {
-          //if CODE or GRAPH keys to be pressed, then first release MSX Shift key, and so, press CODE (or GRAPH)
-          if( (*(base_of_database+scanline*DB_NUM_COLS+CASE2_KEY0) == (uint8_t)0x64) || //CODE key pressed
-              (*(base_of_database+scanline*DB_NUM_COLS+CASE2_KEY0) == (uint8_t)0x62)  ) //GRAPH key pressed
           {
-            //then first release MSX Shift key
-            compute_x_bits_and_check_interrupt_stuck(Y_SHIFT, X_SHIFT, true);
-            //and so, press CODE (or GRAPH)
-            put_msx_disp_keys_queue_buffer(*(base_of_database+scanline*DB_NUM_COLS+CASE2_KEY0));
-          }  //if (*(base_of_database+scanline*DB_NUM_COLS+CASE2_KEY0) == 0x64) //if CODE key pressed
-          else  //put default key
-          {
-            x_local = *(base_of_database+scanline*DB_NUM_COLS+CASE2_KEY0) & (uint8_t)X_LOCAL_MASK;
-            x_local_setb = (*(base_of_database+scanline*DB_NUM_COLS+CASE2_KEY0) & (uint8_t)X_POLARITY_BIT_MASK) >> X_POLARITY_BIT_POSITION;
+            x_local = tableVal & (uint8_t)X_LOCAL_MASK;
+            x_local_setb = ((tableVal & (uint8_t)X_POLARITY_BIT_MASK) != 0);
+            if ((tableVal & ~(uint8_t)X_POLARITY_BIT_MASK) == MSX_SHIFT_PRESS)
+              x_local_setb ^= rusLatState;
             compute_x_bits_and_check_interrupt_stuck(y_local, x_local, x_local_setb);
-          }
-        } //if (y_local != y_dummy)
-        // Key 1 (PS/2 Left and Right Shift):
-        y_local = (*(base_of_database+scanline*DB_NUM_COLS+CASE2_KEY1) & (uint8_t)Y_LOCAL_MASK) >> NIBBLE;
-        // Verify if key is mapped
-        if (y_local != y_dummy)
-        {
-          //So, first send CODE (or GRAPH) released, or another one, BUT if is MSX Shift at this position, it is release
-          if( (*(base_of_database+scanline*DB_NUM_COLS+CASE2_KEY1) & ~(uint8_t)X_POLARITY_BIT_MASK)
-                                                                                  == (MSX_SHIFT_PRESS) )
-          {
-            //Shift key
-            if(shiftstate)
-              put_msx_disp_keys_queue_buffer(MSX_SHIFT_PRESS);  //return MSX Shift key as pressed state
-            else
-              put_msx_disp_keys_queue_buffer(MSX_SHIFT_PRESS | X_POLARITY_BIT_MASK);  //return MSX Shift key as released state
-          } //if( (*(base_of_database+scanline*DB_NUM_COLS+CASE2_KEY1) & ~(uint8_t)X_POLARITY_BIT_MASK) == (MSX_SHIFT_PRESS))
-          else  //if( (*(base_of_database+scanline*DB_NUM_COLS+CASE2_KEY1) & ~(uint8_t)X_POLARITY_BIT_MASK) == (MSX_SHIFT_PRESS))
-          {
-            put_msx_disp_keys_queue_buffer(*(base_of_database+scanline*DB_NUM_COLS+CASE2_KEY1));
-            //and then, if it is CODE (or GRAPH) Release, reinsert the dropped MSX Shift key
-            if( true||(*(base_of_database+scanline*DB_NUM_COLS+CASE2_KEY1) == (uint8_t)0x6C) || //if CODE key released
-                (*(base_of_database+scanline*DB_NUM_COLS+CASE2_KEY1) == (uint8_t)0x6A)  ) //if GRAPH key released
+            if (false)
             {
               //and then, as it is CODE (or GRAPH) Release, reinsert the dropped MSX Shift key
               if(shiftstate)
                 put_msx_disp_keys_queue_buffer(MSX_SHIFT_PRESS);  //return MSX Shift key as pressed state
               else
                 put_msx_disp_keys_queue_buffer(MSX_SHIFT_PRESS | X_POLARITY_BIT_MASK);  //return MSX Shift key as released state
-            } //if CODE key released or GRAPH key released
-          } //if( (*(base_of_database+scanline*DB_NUM_COLS+CASE2_KEY1) & ~(uint8_t)X_POLARITY_BIT_MASK) == (MSX_SHIFT_PRESS))
+            }
+          }
+        } //if (y_local != y_dummy)
+        // Key 1 (PS/2 Left and Right Shift):
+        tableVal = base_of_database[scanline * DB_NUM_COLS + CASE2_KEY1];
+        y_local = (tableVal & (uint8_t)Y_LOCAL_MASK) >> NIBBLE;
+        // Verify if key is mapped
+        if (y_local != y_dummy)
+        {
+            put_msx_disp_keys_queue_buffer(tableVal);
+            //waitForRelease = tableVal | X_POLARITY_BIT_MASK;
+            //if CODE key released or GRAPH key released
         } //if (y_local != y_dummy)
       } //case 2: if (!shiftstate)
     }  // .2 -  Alternative mappings (PS/2 Left and Right Shift)  (Columns 6 and 7)
